@@ -217,7 +217,14 @@ class AdaGAE(torch.nn.Module):
             degree = torch.sum(weights, dim=1).pow(-0.5)
             L = (weights * degree).t() * degree
             L = L.cpu()
-            _, vectors = L.symeig(True)
+
+            L = L.numpy()
+            L = (L + L.T) / 2
+            w, vectors = np.linalg.eigh(L)
+            vectors = torch.tensor(vectors)
+
+            # _, vectors = L.symeig(True)
+
             indicator = vectors[:, -n_clusters:]
             indicator = indicator / (indicator.norm(dim=1)+10**-10).repeat(n_clusters, 1).t()
             indicator = indicator.cpu().numpy()
@@ -242,7 +249,7 @@ if __name__ == '__main__':
     import data_loader as loader
     dataset = loader.MNIST_TEST
     data, labels = loader.load_data(dataset)
-    mDevice = torch.device('cuda: 0' if torch.cuda.is_available() else 'cpu')
+    mDevice = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     input_dim = data.shape[1]
     X = torch.Tensor(data).to(mDevice)
     if dataset is loader.USPS:
