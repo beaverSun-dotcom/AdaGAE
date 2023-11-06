@@ -12,7 +12,8 @@ def distance(X, Y, square=True):
     """
     n = X.shape[1]
     m = Y.shape[1]
-    x = torch.norm(X, dim=0)
+
+    x = torch.norm(X, dim=0) # calculating 2-norm for each sample
     x = x * x  # n * 1
     x = torch.t(x.repeat(m, 1))
 
@@ -38,11 +39,11 @@ def cal_weights_via_CAN(X, num_neighbors, links=0):
     size = X.shape[1]
     distances = distance(X, X)
     distances = torch.max(distances, torch.t(distances))
-    sorted_distances, _ = distances.sort(dim=1)
-    top_k = sorted_distances[:, num_neighbors]
+    sorted_distances, _ = distances.sort(dim=1) # sort the distance from the lowwest to the highest (in each row)
+    top_k = sorted_distances[:, num_neighbors]  # select top-k nearest distance
     top_k = torch.t(top_k.repeat(size, 1)) + 10**-10
 
-    sum_top_k = torch.sum(sorted_distances[:, 0:num_neighbors], dim=1)
+    sum_top_k = torch.sum(sorted_distances[:, 0:num_neighbors], dim=1) # # sum up top-k nearest distance
     sum_top_k = torch.t(sum_top_k.repeat(size, 1))
     sorted_distances = None
     torch.cuda.empty_cache()
@@ -59,10 +60,10 @@ def cal_weights_via_CAN(X, num_neighbors, links=0):
         links = torch.Tensor(links).cuda()
         weights += torch.eye(size).cuda()
         weights += links
-        weights /= weights.sum(dim=1).reshape([size, 1])
+        weights /= weights.sum(dim=1).reshape([size, 1]) 
     torch.cuda.empty_cache()
     raw_weights = weights
-    weights = (weights + weights.t()) / 2
+    weights = (weights + weights.t()) / 2  # weights is symmetric, raw_weights sometimes is not 
     raw_weights = raw_weights.cuda()
     weights = weights.cuda()
     return weights, raw_weights
